@@ -85,6 +85,12 @@ let recognizing = false;
 let hintBox = null;
 const cutouts = [];
 
+function setAutoHint() {
+  autoHint.textContent = visionConfigured
+    ? '图片会上传给模型服务来判断姿势。也可以直接手动选。'
+    : '设置 API Key 后可以自动识别，现在可以手动选。';
+}
+
 function setStatus(text) {
   statusEl.textContent = text;
 }
@@ -121,7 +127,7 @@ async function loadModel() {
         loaded += file.loaded;
         total += file.total;
       }
-      setStatus(`首次使用需要下载分割模型：${Math.round((loaded / total) * 100)}%（约 38MB，之后可离线使用）`);
+      setStatus(`正在准备分割模型：${Math.round((loaded / total) * 100)}%（源码运行时首次要下载约 38MB）`);
     },
   };
   const load = async () => {
@@ -785,9 +791,7 @@ async function start() {
   const { dataUrl, name, visionConfigured: configured } = await window.editor.getImage();
   nameInput.value = name;
   visionConfigured = configured;
-  autoHint.textContent = configured
-    ? '图片会上传给模型服务来判断姿势。也可以直接手动选。'
-    : '配置 .env 后可以自动识别，现在可以手动选。';
+  setAutoHint();
 
   const image = new Image();
   image.src = dataUrl;
@@ -964,6 +968,21 @@ async function runRecognition() {
 }
 
 autoButton.addEventListener('click', runRecognition);
+document.getElementById('save-key').addEventListener('click', async () => {
+  const apiKey = document.getElementById('api-key');
+  const workspaceId = document.getElementById('workspace-id');
+  if (!apiKey.value.trim()) {
+    setStatus('请先填写 API Key');
+    return;
+  }
+  visionConfigured = await window.editor.saveVision({ apiKey: apiKey.value, workspaceId: workspaceId.value });
+  apiKey.value = '';
+  workspaceId.value = '';
+  document.getElementById('key-box').open = false;
+  setAutoHint();
+  setStatus('');
+  updateButtons();
+});
 document.getElementById('whole').addEventListener('click', () => window.editor.importWhole());
 
 start().catch(showError);

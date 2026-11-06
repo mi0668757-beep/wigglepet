@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_MODEL = 'qwen3-vl-plus';
+const DEFAULT_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 const REQUEST_TIMEOUT_MS = 90000;
 const MAX_OBJECTS = 12;
 // 模型返回的坐标归一化到这个范围。
@@ -25,13 +26,14 @@ const ACTION_MEANINGS = {
   still: '不动，适合不该动的物体',
 };
 
-// 只解析 KEY=VALUE，环境变量优先，方便临时覆盖。
-function loadConfig(env = process.env, envFile = path.join(__dirname, '.env')) {
+// 只解析 KEY=VALUE。环境变量优先，然后按 files 的顺序，前面的文件优先。
+function loadConfig(env = process.env, files = [path.join(__dirname, '.env')]) {
   const values = {};
-  if (fs.existsSync(envFile)) {
-    for (const line of fs.readFileSync(envFile, 'utf8').split(/\r?\n/)) {
+  for (const file of [].concat(files).reverse()) {
+    if (!fs.existsSync(file)) continue;
+    for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
       const match = /^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/.exec(line);
-      if (match) values[match[1]] = match[2].replace(/^["']|["']$/g, '');
+      if (match && match[2]) values[match[1]] = match[2].replace(/^["']|["']$/g, '');
     }
   }
   const read = (key) => env[key] || values[key] || '';
@@ -39,8 +41,15 @@ function loadConfig(env = process.env, envFile = path.join(__dirname, '.env')) {
   const workspaceId = read('QWEN_WORKSPACE_ID');
   const baseUrl =
     read('QWEN_BASE_URL') ||
-    (workspaceId ? `https://${workspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` : '');
-  return { apiKey, baseUrl, model: read('QWEN_MODEL') || DEFAULT_MODEL, configured: Boolean(apiKey && baseUrl) };
+    (workspaceId ? `https://${workspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` : DEFAULT_BASE_URL);
+  return { apiKey, baseUrl, model: read('QWEN_MODEL') || DEFAULT_MODEL, configured: Boolean(apiKey) };
+}
+
+// 界面里填的 Key 存成同样的格式，文件只有当前用户能读。
+function saveConfig(file, { apiKey, workspaceId }) {
+  const clean = (value) => String(value ?? '').replace(/[\r\n]/g, '').trim();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `QWEN_API_KEY=${clean(apiKey)}\nQWEN_WORKSPACE_ID=${clean(workspaceId)}\n`, { mode: 0o600 });
 }
 
 function buildPrompt(actions = ACTION_MEANINGS) {
@@ -200,4 +209,4 @@ async function recognize(imageDataUrl, config, fetchImpl = fetch, timeoutMs = RE
   return parseRecipe(content, actions);
 }
 
-module.exports = { loadConfig, buildPrompt, parseRecipe, recognize, ACTION_MEANINGS };
+module.exports = { loadConfig, saveConfig, buildPrompt, parseRecipe, recognize, ACTION_MEANINGS };

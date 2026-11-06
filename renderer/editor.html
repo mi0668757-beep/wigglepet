@@ -19,6 +19,15 @@
       <div id="pick-tools" class="tools">
         <button id="auto" class="primary" type="button" disabled>自动识别并配动作</button>
         <p id="auto-hint" class="hint"></p>
+        <details id="key-box">
+          <summary>设置 API Key</summary>
+          <p class="hint">自动识别用你自己的阿里云百炼 Key，只保存在这台电脑上。</p>
+          <label for="api-key">API Key</label>
+          <input id="api-key" type="password" autocomplete="off" />
+          <label for="workspace-id">WorkspaceId（可不填）</label>
+          <input id="workspace-id" type="text" autocomplete="off" />
+          <button id="save-key" type="button">保存</button>
+        </details>
         <p class="hint">整张图会保持原样，只有选中的部分会动。左键点要的部分，右键点不要的部分。</p>
         <div class="row">
           <button id="undo" type="button" disabled>撤销一点</button>

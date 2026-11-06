@@ -7,10 +7,12 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "dist": "node scripts/fetch-model.js && electron-builder"
   },
   "devDependencies": {
-    "electron": "^45.2.3"
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.2"
@@ -21,5 +23,43 @@
   },
   "productName": "WigglePet",
   "repository": "github:mi0668757-beep/wigglepet",
-  "author": "mi0668757-beep"
+  "author": "mi0668757-beep",
+  "build": {
+    "appId": "io.github.mi0668757beep.wigglepet",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "badge.js",
+      "vision.js",
+      "reminders.js",
+      "preload.js",
+      "editor-preload.js",
+      "renderer/**",
+      "pets/**",
+      "models/**",
+      "!node_modules/onnxruntime-web/dist/!(ort-wasm-simd-threaded.asyncify.*)",
+      "!node_modules/onnxruntime-web/lib/**",
+      "!node_modules/@huggingface/transformers/dist/!(transformers.min.js)",
+      "!node_modules/@huggingface/transformers/{src,types}/**"
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.entertainment",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
 }

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { WECHAT_BUNDLE_ID, readBadge } = require('./badge');
-const { loadConfig, recognize } = require('./vision');
+const { loadConfig, saveConfig, recognize } = require('./vision');
 const { DEFAULT_REMINDERS, nextReminder } = require('./reminders');
 
 // 分割模型要用 fetch 读取本地 wasm，还要安全上下文才能缓存模型，file:// 都不满足。
@@ -60,6 +60,13 @@ const DEFAULT_LINES = ['嘿嘿，你来啦～', '今天也辛苦啦，摸摸头'
 
 const userPetsDir = () => path.join(app.getPath('userData'), 'pets');
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
+const userVisionFile = () => path.join(app.getPath('userData'), 'vision.env');
+// 用户自己填的优先；内部分享版可以在安装包里放一份 internal.env；开发时读项目里的 .env。
+const visionFiles = () => [
+  userVisionFile(),
+  ...(app.isPackaged ? [path.join(process.resourcesPath, 'internal.env')] : []),
+  path.join(__dirname, '.env'),
+];
 
 function loadSettings() {
   const defaults = {
@@ -353,12 +360,17 @@ app.whenReady().then(() => {
   ipcMain.handle('editor-image', () => ({
     dataUrl: imageDataUrl(editorImage),
     name: displayName(editorImage),
-    visionConfigured: loadConfig().configured,
+    visionConfigured: loadConfig(process.env, visionFiles()).configured,
   }));
+  // Key 只进不出：页面可以保存，但读不回来。
+  ipcMain.handle('editor-save-vision', (_event, values) => {
+    saveConfig(userVisionFile(), values);
+    return loadConfig(process.env, visionFiles()).configured;
+  });
   // API Key 只留在主进程，页面拿不到。
   ipcMain.handle('editor-recognize', async (_event, imageUrl) => {
     try {
-      return { recipe: await recognize(imageUrl, loadConfig()) };
+      return { recipe: await recognize(imageUrl, loadConfig(process.env, visionFiles())) };
     } catch (error) {
       return { error: error.message };
     }

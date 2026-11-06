@@ -177,6 +177,27 @@ button.primary {
   font-weight: 600;
 }
 
+#key-box {
+  color: var(--muted);
+}
+
+#key-box summary {
+  cursor: pointer;
+}
+
+#key-box[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+#key-box input {
+  width: 100%;
+}
+
 #cutouts {
   flex: 1 1 0;
   min-height: 112px;

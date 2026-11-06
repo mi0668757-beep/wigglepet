@@ -3,3 +3,4 @@ dist/
 models/
 .env
 .DS_Store
+internal.env

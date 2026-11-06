@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { test } = require('node:test');
-const { loadConfig, buildPrompt, parseRecipe, recognize, ACTION_MEANINGS } = require('../vision');
+const { loadConfig, saveConfig, buildPrompt, parseRecipe, recognize, ACTION_MEANINGS } = require('../vision');
 
 const noFile = path.join(os.tmpdir(), 'desktop-pet-no-such-env');
 
@@ -35,6 +35,32 @@ test('环境变量优先于 .env，也可以换模型和地址', () => {
   assert.equal(config.apiKey, 'from-env');
   assert.equal(config.baseUrl, 'http://localhost:1/v1');
   assert.equal(config.model, 'other');
+});
+
+test('只填 Key 也能用，走默认地址', () => {
+  const config = loadConfig({ QWEN_API_KEY: 'k' }, noFile);
+  assert.equal(config.configured, true);
+  assert.equal(config.baseUrl, 'https://dashscope.aliyuncs.com/compatible-mode/v1');
+});
+
+test('多个配置来源时，前面的优先，后面的补缺，空值不覆盖', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pet-'));
+  const user = path.join(dir, 'user.env');
+  const bundled = path.join(dir, 'bundled.env');
+  fs.writeFileSync(user, 'QWEN_API_KEY=mine\nQWEN_WORKSPACE_ID=\n');
+  fs.writeFileSync(bundled, 'QWEN_API_KEY=team\nQWEN_MODEL=team-model\n');
+  const config = loadConfig({}, [user, bundled]);
+  assert.equal(config.apiKey, 'mine');
+  assert.equal(config.model, 'team-model');
+});
+
+test('保存 Key 后读得回来，换行不会注入其他配置，文件只有自己能读', () => {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pet-')), 'sub', 'vision.env');
+  saveConfig(file, { apiKey: ' sk-abc\nQWEN_BASE_URL=http://evil ', workspaceId: '' });
+  const config = loadConfig({}, file);
+  assert.ok(config.apiKey.startsWith('sk-abc'));
+  assert.ok(!config.baseUrl.includes('evil'));
+  if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
 });
 
 test('提示词列出所有动作和坐标规则', () => {
