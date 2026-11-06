@@ -4,3 +4,4 @@ models/
 .env
 .DS_Store
 internal.env
+dist-internal/

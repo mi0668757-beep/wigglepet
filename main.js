@@ -56,6 +56,15 @@ const MIME = {
   '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
 };
+const SERVED_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.json': 'application/json',
+  '.wasm': 'application/wasm',
+  '.onnx': 'application/octet-stream',
+};
 const DEFAULT_LINES = ['嘿嘿，你来啦～', '今天也辛苦啦，摸摸头', '要不要歇一小会儿呀？', '你认真的样子好厉害！', '再戳我一下试试嘛～'];
 
 const userPetsDir = () => path.join(app.getPath('userData'), 'pets');
@@ -174,6 +183,9 @@ app.whenReady().then(() => {
     if (!fs.existsSync(file)) return new Response(null, { status: 404 });
     const response = await net.fetch(pathToFileURL(file).toString());
     const headers = new Headers(response.headers);
+    // Windows 按注册表判断文件类型，.mjs 和 .wasm 可能读错，导致模块加载失败。
+    const contentType = SERVED_TYPES[path.extname(file).toLowerCase()];
+    if (contentType) headers.set('Content-Type', contentType);
     headers.set('Cross-Origin-Opener-Policy', 'same-origin');
     headers.set('Cross-Origin-Embedder-Policy', 'credentialless');
     return new Response(response.body, { status: response.status, headers });
