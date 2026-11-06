@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="440" viewBox="0 0 440 440">
+  <!-- 腿和脚 -->
+  <rect x="172" y="372" width="36" height="46" rx="16" fill="#3f4a63"/>
+  <rect x="232" y="372" width="36" height="46" rx="16" fill="#3f4a63"/>
+  <ellipse cx="186" cy="420" rx="28" ry="14" fill="#f4f1ea"/>
+  <ellipse cx="254" cy="420" rx="28" ry="14" fill="#f4f1ea"/>
+  <!-- 手臂 -->
+  <rect x="112" y="298" width="42" height="74" rx="21" fill="#f2a65a" transform="rotate(18 133 335)"/>
+  <rect x="286" y="298" width="42" height="74" rx="21" fill="#f2a65a" transform="rotate(-18 307 335)"/>
+  <circle cx="122" cy="372" r="18" fill="#ffdcc2"/>
+  <circle cx="318" cy="372" r="18" fill="#ffdcc2"/>
+  <!-- 身体 -->
+  <path d="M150 300c0-22 18-36 40-36h60c22 0 40 14 40 36v62c0 18-14 30-32 30h-76c-18 0-32-12-32-30z" fill="#f2a65a"/>
+  <rect x="196" y="320" width="48" height="38" rx="10" fill="#f8c78f"/>
+  <!-- 后发 -->
+  <ellipse cx="220" cy="160" rx="146" ry="142" fill="#3a2d2a"/>
+  <!-- 脸 -->
+  <ellipse cx="220" cy="182" rx="122" ry="112" fill="#ffdcc2"/>
+  <!-- 刘海 -->
+  <path d="M96 170c-6-74 54-128 124-128s132 54 126 128c-20-34-50-54-84-62-10 22-34 36-66 36-34 0-60-8-74-22-10 12-20 28-26 48z" fill="#3a2d2a"/>
+  <!-- 五官 -->
+  <ellipse cx="170" cy="196" rx="19" ry="25" fill="#2b2230"/>
+  <ellipse cx="270" cy="196" rx="19" ry="25" fill="#2b2230"/>
+  <circle cx="177" cy="185" r="7" fill="#fff"/>
+  <circle cx="277" cy="185" r="7" fill="#fff"/>
+  <ellipse cx="136" cy="232" rx="24" ry="14" fill="#f79c8f" opacity=".55"/>
+  <ellipse cx="304" cy="232" rx="24" ry="14" fill="#f79c8f" opacity=".55"/>
+  <path d="M202 240q18 18 36 0" fill="none" stroke="#a4503f" stroke-width="7" stroke-linecap="round"/>
+</svg>

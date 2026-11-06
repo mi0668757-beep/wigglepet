@@ -1,0 +1,7 @@
+{
+  "name": "empty-native-dependency",
+  "version": "1.0.0",
+  "private": true,
+  "description": "transformers.js 的 Node 原生依赖占位。分割模型跑在页面的 wasm 里，用不到它们，替换后安装体积少约 300MB。",
+  "license": "MIT"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "wigglepet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "导入一张卡通图，让图里的部分动起来的桌面宠物，还能到点提醒吃饭喝水",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "devDependencies": {
+    "electron": "^45.2.3"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.2"
+  },
+  "overrides": {
+    "onnxruntime-node": "file:./stubs/empty",
+    "sharp": "file:./stubs/empty"
+  },
+  "productName": "WigglePet",
+  "repository": "github:mi0668757-beep/wigglepet",
+  "author": "mi0668757-beep"
+}

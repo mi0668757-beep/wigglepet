@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' data: blob: https://huggingface.co https://*.huggingface.co https://*.hf.co https://hf-mirror.com https://*.hf-mirror.com"
+    />
+    <title>选择会动的部分</title>
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <main id="stage">
+      <canvas id="canvas"></canvas>
+      <p id="status" role="status">正在准备…</p>
+    </main>
+    <aside>
+      <h1 id="title">选择会动的部分</h1>
+      <div id="pick-tools" class="tools">
+        <button id="auto" class="primary" type="button" disabled>自动识别并配动作</button>
+        <p id="auto-hint" class="hint"></p>
+        <p class="hint">整张图会保持原样，只有选中的部分会动。左键点要的部分，右键点不要的部分。</p>
+        <div class="row">
+          <button id="undo" type="button" disabled>撤销一点</button>
+          <button id="clear" type="button" disabled>全部清除</button>
+        </div>
+        <button id="next-range" type="button" disabled>换个范围</button>
+        <button id="add" class="primary" type="button" disabled>设为会动的部分</button>
+      </div>
+      <div id="touch-tools" class="tools" hidden>
+        <p class="hint">在图上拖动来修补边缘。恢复时，浅色显示的是可以找回的部分。</p>
+        <div class="row" role="radiogroup" aria-label="笔刷模式">
+          <label class="choice"><input type="radio" name="brush-mode" value="erase" checked />擦除</label>
+          <label class="choice"><input type="radio" name="brush-mode" value="restore" />恢复</label>
+        </div>
+        <label for="brush-size">笔刷大小</label>
+        <input id="brush-size" type="range" min="2" max="60" value="12" />
+        <button id="touch-undo" type="button" disabled>撤销一笔</button>
+        <button id="touch-done" class="primary" type="button">修补完成</button>
+      </div>
+
+      <h2>会动的部分 <span id="count">0</span>/12</h2>
+      <ul id="cutouts"></ul>
+
+      <label for="name">桌宠名字</label>
+      <input id="name" type="text" maxlength="12" />
+      <button id="save" class="primary" type="button" disabled>完成，放到桌面</button>
+      <button id="whole" type="button">不拆分，整张图一起动</button>
+    </aside>
+    <script src="sprite.js"></script>
+    <script src="mask.js"></script>
+    <script type="module" src="editor.js"></script>
+  </body>
+</html>
