@@ -12,6 +12,7 @@ const STALL_MS = 30000;
 const MAX_BASE_SIDE = 1024;
 const BOX_MARGIN = 0.08;
 const SMALL_CHILD_RATIO = 0.05;
+const EYE_HOLE_GROW = 1.3;
 const LARGE_OBJECT_AREA = 0.08;
 const TINY_OBJECT_AREA = 0.02;
 const AROUND_BOX_GAP = 0.3;
@@ -52,6 +53,7 @@ const countEl = document.getElementById('count');
 const nameInput = document.getElementById('name');
 const autoButton = document.getElementById('auto');
 const autoHint = document.getElementById('auto-hint');
+const keepRestInput = document.getElementById('keep-rest');
 const titleEl = document.getElementById('title');
 const pickTools = document.getElementById('pick-tools');
 const touchTools = document.getElementById('touch-tools');
@@ -699,12 +701,17 @@ async function fillCoveredLayers(ordered) {
         rect.y + rect.height > cutout.rect.y;
       if (!overlaps) continue;
       covered = true;
+      // 闭眼时眼睛的位置完全露出来，模糊的图黑边晕得很宽，补底范围要放大一圈才不会混进黑色。
+      const isEye = ordered[upper].action === 'blink' || ordered[upper].action === 'wink';
+      const grow = isEye ? EYE_HOLE_GROW : 1;
+      const drawWidth = rect.width * grow;
+      const drawHeight = rect.height * grow;
       holeContext.drawImage(
         images[upper],
-        (rect.x - cutout.rect.x) * toLocal,
-        (rect.y - cutout.rect.y) * toLocal,
-        rect.width * toLocal,
-        rect.height * toLocal,
+        (rect.x - (drawWidth - rect.width) / 2 - cutout.rect.x) * toLocal,
+        (rect.y - (drawHeight - rect.height) / 2 - cutout.rect.y) * toLocal,
+        drawWidth * toLocal,
+        drawHeight * toLocal,
       );
     }
     if (!covered) {
@@ -736,6 +743,8 @@ async function buildBase() {
   baseCanvas.width = baseWidth;
   baseCanvas.height = baseHeight;
   const baseContext = baseCanvas.getContext('2d', { willReadFrequently: true });
+  // 只留选中的部分时，底图是空的，桌面上就没有背景和装饰。
+  if (!keepRestInput.checked) return { png: baseCanvas.toDataURL('image/png'), scale };
   baseContext.drawImage(full, 0, 0, baseWidth, baseHeight);
   const { data } = baseContext.getImageData(0, 0, baseWidth, baseHeight);
   removeBackground(data, baseWidth, baseHeight);
@@ -887,6 +896,8 @@ async function runRecognition() {
     const { recipe, error } = await window.editor.recognize(source.toDataURL('image/jpeg', 0.9));
     if (error) throw new Error(error);
     autoHint.textContent = recipe.theme ? `画面主题：${recipe.theme}` : '';
+    // 自动识别列出的就是主体，其余的不放到桌面上。
+    keepRestInput.checked = false;
 
     const made = new Map();
     let failed = 0;

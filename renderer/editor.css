@@ -177,6 +177,19 @@ button.primary {
   font-weight: 600;
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.check input {
+  min-height: 0;
+  margin: 0;
+}
+
 #key-box {
   color: var(--muted);
 }

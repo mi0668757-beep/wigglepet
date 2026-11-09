@@ -1,6 +1,10 @@
 // 从一张图里抠出角色并找出两条腿。都是纯函数，data 为 RGBA 像素数组。
 const ALPHA_SOLID = 10;
 const LEAK_GAP_RATIO = 0.008;
+const BACKGROUND_STEP = 12;
+const CORNER_AGREEMENT = 70;
+const BACKGROUND_RANGE = 22;
+const EDGE_COLOR_SHARE = 0.05;
 
 function alphaAt(data, width, x, y) {
   return data[(y * width + x) * 4 + 3];
@@ -14,8 +18,38 @@ function colorsClose(data, a, b, tolerance) {
   );
 }
 
-// 从边缘向内填充背景色，只处理透明或纯色背景，返回 transparent | removed | failed。
-function removeBackground(data, width, height, tolerance = 22) {
+// 背景色取图片四条边上常见的颜色，这样渐变和条纹背景的每种颜色都能认出来。
+// 碰到边缘的物体（切掉一半的蛋糕）只占边缘一小部分，会被比例过滤掉。
+function edgePalette(data, width, height) {
+  const buckets = new Map();
+  let total = 0;
+  const add = (i) => {
+    const offset = i * 4;
+    const key = (data[offset] >> 4) * 256 + (data[offset + 1] >> 4) * 16 + (data[offset + 2] >> 4);
+    const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+    bucket.count += 1;
+    bucket.r += data[offset];
+    bucket.g += data[offset + 1];
+    bucket.b += data[offset + 2];
+    buckets.set(key, bucket);
+    total += 1;
+  };
+  for (let x = 0; x < width; x += 1) {
+    add(x);
+    add((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y += 1) {
+    add(y * width);
+    add(y * width + width - 1);
+  }
+  return [...buckets.values()]
+    .filter(({ count }) => count / total >= EDGE_COLOR_SHARE)
+    .map(({ count, r, g, b }) => [r / count, g / count, b / count]);
+}
+
+// 从边缘向内填充背景，返回 transparent | removed | failed。
+// 比较的是相邻像素而不是固定颜色，这样渐变背景也能一路填过去，碰到描边这种突变才停。
+function removeBackground(data, width, height, step = BACKGROUND_STEP) {
   const total = width * height;
   let clear = 0;
   for (let i = 0; i < total; i += 1) {
@@ -25,32 +59,49 @@ function removeBackground(data, width, height, tolerance = 22) {
 
   const corners = [0, width - 1, (height - 1) * width, total - 1].map((i) => i * 4);
   const background = corners.find(
-    (corner) => corners.filter((other) => colorsClose(data, corner, other, tolerance)).length >= 3,
+    (corner) => corners.filter((other) => colorsClose(data, corner, other, CORNER_AGREEMENT)).length >= 3,
   );
   if (background === undefined) return 'failed';
+  const palette = edgePalette(data, width, height);
+  const isBackgroundColor = (i) =>
+    palette.some(([r, g, b]) => {
+      const offset = i * 4;
+      return (
+        Math.abs(data[offset] - r) <= BACKGROUND_RANGE &&
+        Math.abs(data[offset + 1] - g) <= BACKGROUND_RANGE &&
+        Math.abs(data[offset + 2] - b) <= BACKGROUND_RANGE
+      );
+    });
 
   const visited = new Uint8Array(total);
   const stack = [];
-  const visit = (i) => {
-    if (visited[i] || !colorsClose(data, i * 4, background, tolerance)) return;
+  const seed = (i) => {
+    if (visited[i] || !isBackgroundColor(i)) return;
+    visited[i] = 1;
+    stack.push(i);
+  };
+  const spread = (from, i) => {
+    if (visited[i]) return;
+    // 既要和相邻像素接近，也不能离背景色太远，模糊的描边是慢慢变深的，靠后者挡住。
+    if (!colorsClose(data, i * 4, from * 4, step) || !isBackgroundColor(i)) return;
     visited[i] = 1;
     stack.push(i);
   };
   for (let x = 0; x < width; x += 1) {
-    visit(x);
-    visit((height - 1) * width + x);
+    seed(x);
+    seed((height - 1) * width + x);
   }
   for (let y = 0; y < height; y += 1) {
-    visit(y * width);
-    visit(y * width + width - 1);
+    seed(y * width);
+    seed(y * width + width - 1);
   }
   while (stack.length) {
     const i = stack.pop();
     const x = i % width;
-    if (x > 0) visit(i - 1);
-    if (x < width - 1) visit(i + 1);
-    if (i >= width) visit(i - width);
-    if (i < total - width) visit(i + width);
+    if (x > 0) spread(i, i - 1);
+    if (x < width - 1) spread(i, i + 1);
+    if (i >= width) spread(i, i - width);
+    if (i < total - width) spread(i, i + width);
   }
   const removed = withoutNarrowLeaks(visited, width, height);
   for (let i = 0; i < total; i += 1) {

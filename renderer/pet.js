@@ -318,17 +318,19 @@ async function buildComposition(state) {
   const baseImage = await loadImage(state.image);
   const base = imagePixels(baseImage);
   sprite.base = canvasFromPixels(base.data, base.width, base.height);
-  let box = contentBounds(base.data, base.width, base.height) ?? { x: 0, y: 0, width: base.width, height: base.height };
+  let box = contentBounds(base.data, base.width, base.height);
   for (const [index, layer] of state.layers.entries()) {
     const { data, width, height } = imagePixels(await loadImage(layer.image));
     addLayer(canvasFromPixels(data, width, height), layer, state.layerActions[index], index);
-    const right = Math.max(box.x + box.width, layer.x + layer.width);
-    const bottom = Math.max(box.y + box.height, layer.y + layer.height);
-    const left = Math.min(box.x, layer.x);
-    const top = Math.min(box.y, layer.y);
+    // 底图可能是空的，这时范围完全由图层决定，桌宠才不会缩在一角。
+    const current = box ?? layer;
+    const right = Math.max(current.x + current.width, layer.x + layer.width);
+    const bottom = Math.max(current.y + current.height, layer.y + layer.height);
+    const left = Math.min(current.x, layer.x);
+    const top = Math.min(current.y, layer.y);
     box = { x: left, y: top, width: right - left, height: bottom - top };
   }
-  sprite.bounds = box;
+  sprite.bounds = box ?? { x: 0, y: 0, width: base.width, height: base.height };
   return { background: 'transparent', autoWhole: 'still' };
 }
 

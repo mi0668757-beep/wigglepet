@@ -63,6 +63,30 @@ test('接近背景的浅色物体（浅粉地毯）不会被当成背景抠掉',
   assert.equal(alpha(pic, 2, 1), 255);
 });
 
+test('渐变背景能整片去掉，中间的角色保留', () => {
+  const size = 300;
+  const data = new Uint8ClampedArray(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      // 从浅蓝渐变到白色。
+      const t = y / (size - 1);
+      data.set([190 + 65 * t, 235 + 20 * t, 250 + 5 * t, 255], (y * size + x) * 4);
+    }
+  }
+  for (let y = 100; y < 200; y += 1) {
+    for (let x = 100; x < 200; x += 1) {
+      const edge = x < 106 || x >= 194 || y < 106 || y >= 194;
+      data.set(edge ? [30, 30, 30, 255] : [255, 255, 255, 255], (y * size + x) * 4);
+    }
+  }
+  const pic = { data, width: size, height: size };
+  assert.equal(removeBackground(pic.data, size, size), 'removed');
+  assert.equal(alpha(pic, 10, 10), 0);
+  assert.equal(alpha(pic, 10, 290), 0);
+  assert.equal(alpha(pic, 150, 50), 0);
+  assert.equal(alpha(pic, 150, 150), 255);
+});
+
 // 白底上一只白猫：深色描边围成方块，描边上开了缝。
 function whiteCat(gap) {
   const size = 400;
@@ -76,6 +100,42 @@ function whiteCat(gap) {
   }
   return { data, width: size, height: size };
 }
+
+test('碰到图片边缘的物体不会把自己的颜色算进背景', () => {
+  const size = 300;
+  const data = new Uint8ClampedArray(size * size * 4).fill(255);
+  // 左边缘露出一小块紫色蛋糕。
+  for (let y = 130; y < 170; y += 1) {
+    for (let x = 0; x < 60; x += 1) data.set([200, 170, 230, 255], (y * size + x) * 4);
+  }
+  // 中间还有一块同样颜色的东西，不和边缘相连。
+  for (let y = 130; y < 170; y += 1) {
+    for (let x = 200; x < 260; x += 1) data.set([200, 170, 230, 255], (y * size + x) * 4);
+  }
+  const pic = { data, width: size, height: size };
+  assert.equal(removeBackground(pic.data, size, size), 'removed');
+  assert.equal(alpha(pic, 150, 20), 0);
+  assert.equal(alpha(pic, 30, 150), 255);
+  assert.equal(alpha(pic, 230, 150), 255);
+});
+
+test('边缘模糊的浅色物体不会被当成背景', () => {
+  // 白底上的淡紫色蛋糕，边缘慢慢过渡，没有描边。
+  const size = 300;
+  const data = new Uint8ClampedArray(size * size * 4).fill(255);
+  const CAKE = [225, 205, 235];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const d = Math.max(Math.abs(x - 150), Math.abs(y - 150));
+      const t = Math.max(0, Math.min(1, (70 - d) / 20));
+      data.set([255 + (CAKE[0] - 255) * t, 255 + (CAKE[1] - 255) * t, 255 + (CAKE[2] - 255) * t, 255], (y * size + x) * 4);
+    }
+  }
+  const pic = { data, width: size, height: size };
+  assert.equal(removeBackground(pic.data, size, size), 'removed');
+  assert.equal(alpha(pic, 5, 5), 0);
+  assert.equal(alpha(pic, 150, 150), 255);
+});
 
 test('背景不会从描边的窄缝流进同色的身体', () => {
   const pic = whiteCat(6);
