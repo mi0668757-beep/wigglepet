@@ -1,6 +1,6 @@
 {
   "name": "wigglepet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "导入一张卡通图，让图里的部分动起来的桌面宠物，还能到点提醒吃饭喝水",
   "license": "MIT",
